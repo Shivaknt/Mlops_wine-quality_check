@@ -2,6 +2,12 @@ from src.datascience.config.configuration import ConfigurationManager
 from src.datascience.components.model_evaluation import ModelEvaluation
 from src.datascience import logger
 
+import os
+os.environ["MLFLOW_TRACKING_URI"]="DAGHUB LINK"
+os.environ["MLFLOW_TRACKING_USERNAME"]="Shivaknt"
+os.environ["MLFLOW_TRACKING_PASSWORD"]="PASSWORD"
+
+
 STAGE_NAME = "Model evaluation stage"
 
 class ModelEvaluationTrainingPipeline:

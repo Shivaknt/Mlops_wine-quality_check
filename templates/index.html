@@ -1,120 +1,325 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-      
-    </head>
-    <body>
-       
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wine Quality Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --wine:       #6B1A2A;
+      --wine-deep:  #3D0A14;
+      --rose:       #C4637A;
+      --gold:       #C9A84C;
+      --cream:      #F5EFE6;
+      --parchment:  #EDE4D4;
+      --text:       #1C0A0E;
+      --muted:      #7A5C62;
+      --glass:      rgba(255,255,255,0.07);
+      --border:     rgba(201,168,76,0.25);
+    }
 
-        <!-- Main Content-->
-        <div class="container px-4 px-lg-5">
+    html, body {
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--wine-deep);
+      color: var(--cream);
+      overflow-x: hidden;
+    }
 
-           <!DOCTYPE html>
-<html>
+    /* ── Animated background ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(107,26,42,0.6) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 85% 90%, rgba(196,99,122,0.25) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 40% at 60% 40%, rgba(201,168,76,0.08) 0%, transparent 50%);
+      animation: bgPulse 12s ease-in-out infinite alternate;
+    }
+    @keyframes bgPulse {
+      from { opacity: .8; }
+      to   { opacity: 1; }
+    }
 
-<body class="form-v9">
-	<div class="page-content">
-		<div class="form-v9-content" style="background-image: url('static/assets/img/form-v9.jpg')">
-			<form class="form-detail" action="/predict" method="post">
-				<h2>Please Fill The Information</h2>
-				<div class="form-row-total">
+    /* Grain overlay */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: .5;
+    }
 
-					<div class="form-row">
-                        <label for="fixed_acidity"> Fixed Acidity:</label>
-						<input type="text" name="fixed_acidity" id="fixed_acidity" class="input-text" placeholder="fixed_acidity" required>
-					</div>
+    .wrapper {
+      position: relative; z-index: 2;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 60px 20px 80px;
+    }
 
-					<div class="form-row">
-                        <label for="volatile_acidity"> Volatile Acidity:</label>
-						<input type="text" name="volatile_acidity" id="volatile_acidity" class="input-text" placeholder="volatile_acidity" required>
-					</div>
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 52px;
+      animation: fadeDown .8s ease both;
+    }
+    .label {
+      display: inline-block;
+      font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold); font-family: 'DM Sans', sans-serif; font-weight: 500;
+      margin-bottom: 14px;
+      opacity: .9;
+    }
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.8rem, 6vw, 4.8rem);
+      font-weight: 300; line-height: 1.05;
+      color: var(--cream);
+      letter-spacing: -0.5px;
+    }
+    h1 em {
+      font-style: italic; color: var(--rose);
+    }
+    .tagline {
+      margin-top: 14px;
+      font-size: 14px; color: var(--muted); font-weight: 300; letter-spacing: .3px;
+    }
 
-				</div>
+    /* ── Gold divider ── */
+    .divider {
+      width: 60px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 18px auto 0;
+    }
 
+    /* ── Card ── */
+    .card {
+      width: 100%; max-width: 760px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      backdrop-filter: blur(24px);
+      padding: 48px 52px 52px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+      animation: fadeUp .9s ease .15s both;
+    }
+    @media (max-width: 600px) {
+      .card { padding: 32px 24px 36px; }
+    }
 
-				<div class="form-row-total">
+    /* ── Section headers ── */
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 11px; letter-spacing: 3.5px; text-transform: uppercase;
+      color: var(--gold); font-weight: 600;
+      margin-bottom: 22px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
 
-                    <div class="form-row">
-                        <label for="citric_acid"> Citric Acid:</label>
-						<input type="text" name="citric_acid" id="citric_acid" class="input-text" placeholder="citric_acid" required>
-					</div>
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 28px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
 
+    .field { display: flex; flex-direction: column; gap: 7px; }
 
-                    <div class="form-row">
-                        <label for="residual_sugar"> Residual Sugar:</label>
-						<input type="text" name="residual_sugar" id="residual_sugar" class="input-text" placeholder="residual_sugar" required>
-					</div>
+    label {
+      font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--gold); font-weight: 500;
+    }
 
-				</div>
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      outline: none;
+    }
+    input::placeholder { color: rgba(245,239,230,0.22); }
+    input:focus {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.06);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+    }
+    input:hover:not(:focus) { border-color: rgba(201,168,76,0.4); }
 
+    /* ── Submit ── */
+    .btn-wrap {
+      display: flex; justify-content: center;
+      padding-top: 8px;
+    }
+    button[type="submit"] {
+      position: relative; overflow: hidden;
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, var(--wine) 0%, var(--wine-deep) 100%);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500;
+      padding: 16px 44px;
+      border-radius: 50px; cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+    }
+    button[type="submit"]::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(201,168,76,0.15), transparent);
+      opacity: 0; transition: opacity .3s;
+    }
+    button[type="submit"]:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(107,26,42,0.6); }
+    button[type="submit"]:hover::before { opacity: 1; }
+    button[type="submit"]:active { transform: translateY(0); }
 
-                <div class="form-row-total">
+    /* Wine drop icon */
+    .drop {
+      display: inline-block;
+      width: 8px; height: 10px;
+      background: var(--gold);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      transform: rotate(15deg);
+    }
 
-                    <div class="form-row">
-                        <label for="chlorides"> Chlorides:</label>
-						<input type="text" name="chlorides" id="chlorides" class="input-text" placeholder="chlorides" required>
-					</div>
+    /* ── Train link ── */
+    .train-link {
+      margin-top: 28px;
+      text-align: center;
+      font-size: 12px; color: var(--muted);
+    }
+    .train-link a {
+      color: var(--rose); text-decoration: none;
+      border-bottom: 1px dashed rgba(196,99,122,.4);
+      transition: color .2s;
+    }
+    .train-link a:hover { color: var(--cream); }
 
-                    <div class="form-row">
-                        <label for="free_sulfur_dioxide"> Free Sulfur Dioxide:</label>
-						<input type="text" name="free_sulfur_dioxide" id="free_sulfur_dioxide" class="input-text" placeholder="free_sulfur_dioxide" required>
-					</div>
+    /* ── Animations ── */
+    @keyframes fadeDown {
+      from { opacity:0; transform: translateY(-20px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(24px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
 
-				</div>
+    /* Stagger fields */
+    .field:nth-child(1)  { animation: fadeUp .6s ease .2s both; }
+    .field:nth-child(2)  { animation: fadeUp .6s ease .25s both; }
+    .field:nth-child(3)  { animation: fadeUp .6s ease .3s both; }
+    .field:nth-child(4)  { animation: fadeUp .6s ease .35s both; }
+    .field:nth-child(5)  { animation: fadeUp .6s ease .4s both; }
+    .field:nth-child(6)  { animation: fadeUp .6s ease .45s both; }
+    .field:nth-child(7)  { animation: fadeUp .6s ease .5s both; }
+    .field:nth-child(8)  { animation: fadeUp .6s ease .55s both; }
+    .field:nth-child(9)  { animation: fadeUp .6s ease .6s both; }
+    .field:nth-child(10) { animation: fadeUp .6s ease .65s both; }
+    .field:nth-child(11) { animation: fadeUp .6s ease .7s both; }
 
+    footer {
+      position: relative; z-index: 2;
+      margin-top: 48px;
+      font-size: 11px; color: rgba(122,92,98,.5);
+      letter-spacing: 1px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <p class="label">ML-Powered Analysis</p>
+      <h1>Wine <em>Quality</em><br>Predictor</h1>
+      <div class="divider"></div>
+      <p class="tagline">Enter the chemical properties of your wine to receive an instant quality score.</p>
+    </header>
 
-                <div class="form-row-total">
+    <div class="card">
+      <form action="/predict" method="post">
 
-                    <div class="form-row">
-                        <label for="total_sulfur_dioxide"> Total Sulfur Dioxide:</label>
-						<input type="text" name="total_sulfur_dioxide" id="total_sulfur_dioxide" class="input-text" placeholder="total_sulfur_dioxide" required>
-					</div>
+        <!-- Acidity Group -->
+        <p class="section-title">Acidity &amp; Sugars</p>
+        <div class="grid">
+          <div class="field">
+            <label for="fixed_acidity">Fixed Acidity</label>
+            <input type="text" name="fixed_acidity" id="fixed_acidity" placeholder="e.g. 7.4" required />
+          </div>
+          <div class="field">
+            <label for="volatile_acidity">Volatile Acidity</label>
+            <input type="text" name="volatile_acidity" id="volatile_acidity" placeholder="e.g. 0.70" required />
+          </div>
+          <div class="field">
+            <label for="citric_acid">Citric Acid</label>
+            <input type="text" name="citric_acid" id="citric_acid" placeholder="e.g. 0.00" required />
+          </div>
+          <div class="field">
+            <label for="residual_sugar">Residual Sugar</label>
+            <input type="text" name="residual_sugar" id="residual_sugar" placeholder="e.g. 1.9" required />
+          </div>
+        </div>
 
-                    <div class="form-row">
-                        <label for="density"> Density:</label>
-						<input type="text" name="density" id="density" class="input-text" placeholder="density" required>
-					</div>
+        <!-- Chemical Group -->
+        <p class="section-title">Chemical Profile</p>
+        <div class="grid">
+          <div class="field">
+            <label for="chlorides">Chlorides</label>
+            <input type="text" name="chlorides" id="chlorides" placeholder="e.g. 0.076" required />
+          </div>
+          <div class="field">
+            <label for="free_sulfur_dioxide">Free SO₂</label>
+            <input type="text" name="free_sulfur_dioxide" id="free_sulfur_dioxide" placeholder="e.g. 11" required />
+          </div>
+          <div class="field">
+            <label for="total_sulfur_dioxide">Total SO₂</label>
+            <input type="text" name="total_sulfur_dioxide" id="total_sulfur_dioxide" placeholder="e.g. 34" required />
+          </div>
+          <div class="field">
+            <label for="density">Density</label>
+            <input type="text" name="density" id="density" placeholder="e.g. 0.9978" required />
+          </div>
+        </div>
 
-				</div>
+        <!-- Physical Group -->
+        <p class="section-title">Physical Properties</p>
+        <div class="grid">
+          <div class="field">
+            <label for="pH">pH</label>
+            <input type="text" name="pH" id="pH" placeholder="e.g. 3.51" required />
+          </div>
+          <div class="field">
+            <label for="sulphates">Sulphates</label>
+            <input type="text" name="sulphates" id="sulphates" placeholder="e.g. 0.56" required />
+          </div>
+          <div class="field">
+            <label for="alcohol">Alcohol %</label>
+            <input type="text" name="alcohol" id="alcohol" placeholder="e.g. 9.4" required />
+          </div>
+        </div>
 
+        <div class="btn-wrap">
+          <button type="submit">
+            <span class="drop"></span>
+            Predict Quality
+          </button>
+        </div>
 
-                <div class="form-row-total">
+      </form>
 
-                    <div class="form-row">
-                        <label for="pH"> pH:</label>
-						<input type="text" name="pH" id="pH" class="input-text" placeholder="pH" required>
-					</div>
+      <p class="train-link">
+        Want to retrain the model? <a href="/train">Run training pipeline →</a>
+      </p>
+    </div>
 
-                    <div class="form-row">
-                        <label for="sulphates"> Sulphates:</label>
-						<input type="text" name="sulphates" id="sulphates" class="input-text" placeholder="sulphates" required>
-					</div>
-
-				</div>
-
-
-                <div class="form-row-total">
-
-                    <div class="form-row">
-                        <label for="alcohol"> Alcohol:</label>
-						<input type="text" name="alcohol" id="alcohol" class="input-text" placeholder="alcohol" required>
-					</div>
-
-
-				</div>
-
-
-				<div class="form-row-last">
-					<input type="submit" name="register" class="register" value="Predict">
-				</div>
-			</form>
-		</div>
-	</div>
-</body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+    <footer>© Wine Quality Predictor &nbsp;·&nbsp; Powered by Machine Learning</footer>
+  </div>
+</body>
 </html>
-
-        
-
-
-       

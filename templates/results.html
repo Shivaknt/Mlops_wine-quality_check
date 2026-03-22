@@ -1,2 +1,273 @@
-<h1>{{prediction}} </h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prediction Result · Wine Quality</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --wine:      #6B1A2A;
+      --wine-deep: #3D0A14;
+      --rose:      #C4637A;
+      --gold:      #C9A84C;
+      --cream:     #F5EFE6;
+      --muted:     #7A5C62;
+      --glass:     rgba(255,255,255,0.07);
+      --border:    rgba(201,168,76,0.25);
+    }
+
+    html, body {
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--wine-deep);
+      color: var(--cream);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 15% 15%, rgba(107,26,42,0.7) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 70% at 85% 80%, rgba(196,99,122,0.3) 0%, transparent 55%),
+        radial-gradient(ellipse 35% 35% at 55% 45%, rgba(201,168,76,0.1) 0%, transparent 50%);
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: .5;
+    }
+
+    .wrapper {
+      position: relative; z-index: 2;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 20px;
+      gap: 0;
+    }
+
+    /* ── Result card ── */
+    .result-card {
+      width: 100%; max-width: 520px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      backdrop-filter: blur(28px);
+      padding: 56px 52px 52px;
+      text-align: center;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
+      animation: popIn .7s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @media (max-width: 560px) { .result-card { padding: 40px 28px 40px; } }
+
+    /* ── Wine glass SVG ── */
+    .glass-wrap {
+      display: flex; justify-content: center;
+      margin-bottom: 32px;
+    }
+    .wine-glass {
+      width: 72px; height: 72px;
+      animation: floatGlass 4s ease-in-out infinite;
+    }
+    @keyframes floatGlass {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
+    /* ── Score ── */
+    .score-label {
+      font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold); font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .score-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.8rem, 8vw, 4.5rem);
+      font-weight: 300; line-height: 1.1;
+      color: var(--cream);
+      letter-spacing: -1px;
+      word-break: break-all;
+      animation: countUp .8s ease .3s both;
+    }
+    .score-value sup {
+      font-size: .35em; letter-spacing: 0; color: var(--gold);
+      vertical-align: super; font-weight: 600;
+    }
+
+    .divider {
+      width: 50px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 20px auto;
+    }
+
+    /* ── Verdict badge ── */
+    .verdict {
+      display: inline-block;
+      padding: 7px 22px;
+      border-radius: 50px;
+      font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 500;
+      margin-bottom: 20px;
+      animation: fadeUp .6s ease .5s both;
+    }
+    .verdict.good   { background: rgba(107,168,107,0.15); border: 1px solid rgba(107,168,107,0.4); color: #8fd88f; }
+    .verdict.mid    { background: rgba(201,168,76,0.12);  border: 1px solid rgba(201,168,76,0.4);  color: var(--gold); }
+    .verdict.low    { background: rgba(196,99,122,0.12);  border: 1px solid rgba(196,99,122,0.4);  color: var(--rose); }
+
+    /* ── Description ── */
+    .desc {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem; font-style: italic;
+      color: rgba(245,239,230,0.6);
+      line-height: 1.6; margin-bottom: 36px;
+      animation: fadeUp .6s ease .6s both;
+    }
+
+    /* ── Stars ── */
+    .stars {
+      display: flex; justify-content: center; gap: 6px;
+      margin-bottom: 40px;
+      animation: fadeUp .6s ease .65s both;
+    }
+    .star {
+      font-size: 20px;
+      transition: transform .2s;
+    }
+    .star.filled { color: var(--gold); }
+    .star.empty  { color: rgba(201,168,76,0.2); }
+    .star.filled:hover { transform: scale(1.2); }
+
+    /* ── CTA ── */
+    .actions {
+      display: flex; flex-direction: column; gap: 12px;
+      animation: fadeUp .6s ease .75s both;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(135deg, var(--wine) 0%, var(--wine-deep) 100%);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500;
+      padding: 15px 36px; border-radius: 50px;
+      text-decoration: none; cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(107,26,42,0.5); }
+
+    .btn-ghost {
+      display: inline-block;
+      color: var(--muted); font-size: 13px;
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .btn-ghost:hover { color: var(--cream); }
+
+    /* ── Animations ── */
+    @keyframes popIn {
+      from { opacity:0; transform: scale(.88) translateY(30px); }
+      to   { opacity:1; transform: scale(1)   translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes countUp {
+      from { opacity:0; transform: scale(.7); }
+      to   { opacity:1; transform: scale(1); }
+    }
+
+    footer {
+      position: relative; z-index: 2;
+      margin-top: 36px;
+      font-size: 11px; color: rgba(122,92,98,.4);
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="result-card">
+
+      <!-- Floating wine glass -->
+      <div class="glass-wrap">
+        <svg class="wine-glass" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="36" cy="22" rx="18" ry="16" fill="rgba(107,26,42,0.55)" stroke="#C9A84C" stroke-width="1.2"/>
+          <path d="M18 22 Q18 44 36 50 Q54 44 54 22" fill="rgba(107,26,42,0.3)" stroke="none"/>
+          <line x1="36" y1="50" x2="36" y2="62" stroke="#C9A84C" stroke-width="1.2"/>
+          <ellipse cx="36" cy="63" rx="10" ry="2.5" fill="none" stroke="#C9A84C" stroke-width="1.2"/>
+          <!-- wine fill ripple -->
+          <ellipse cx="36" cy="28" rx="13" ry="5" fill="rgba(196,99,122,0.35)">
+            <animate attributeName="ry" values="5;6;5" dur="3s" repeatCount="indefinite"/>
+          </ellipse>
+        </svg>
+      </div>
+
+      <p class="score-label">Predicted Quality Score</p>
+
+      <!-- Score injected by Flask -->
+      <div class="score-value" id="scoreDisplay" data-raw="{{ prediction }}">
+        {{ prediction | float | round(1) }}<sup>/10</sup>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Verdict & stars set by JS based on score -->
+      <div class="verdict" id="verdict">Evaluating…</div>
+      <div class="stars" id="stars"></div>
+      <p class="desc" id="desc"></p>
+
+      <div class="actions">
+        <a href="/" class="btn-primary">
+          ← Predict Another Wine
+        </a>
+        <a href="/train" class="btn-ghost">Retrain the model</a>
+      </div>
+    </div>
+
+    <footer>© Wine Quality Predictor &nbsp;·&nbsp; Powered by Machine Learning</footer>
+  </div>
+
+  <script>
+    // Parse the score from the rendered value
+    const raw = document.getElementById('scoreDisplay').dataset.raw.trim();
+    const score = parseFloat(raw);
+
+    const verdictEl = document.getElementById('verdict');
+    const descEl    = document.getElementById('desc');
+    const starsEl   = document.getElementById('stars');
+
+    // Determine tier
+    let tier, label, desc;
+    if (score >= 7) {
+      tier  = 'good';
+      label = 'Excellent Quality';
+      desc  = 'A wine of remarkable character — well-balanced, complex, and deeply satisfying.';
+    } else if (score >= 5) {
+      tier  = 'mid';
+      label = 'Good Quality';
+      desc  = 'A pleasant, well-made wine with agreeable character and consistent notes.';
+    } else {
+      tier  = 'low';
+      label = 'Below Average';
+      desc  = 'This wine shows some imbalance in its profile. Consider adjustments to the blend.';
+    }
+
+    verdictEl.textContent = label;
+    verdictEl.className   = 'verdict ' + tier;
+    descEl.textContent    = desc;
+
+    // Stars out of 5, proportional to 0-10 scale
+    const starCount = Math.round((score / 10) * 5);
+    for (let i = 1; i <= 5; i++) {
+      const s = document.createElement('span');
+      s.className = 'star ' + (i <= starCount ? 'filled' : 'empty');
+      s.textContent = '★';
+      starsEl.appendChild(s);
+    }
+  </script>
+</body>
+</html>
